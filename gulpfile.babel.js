@@ -14,4 +14,10 @@ export const pug = () =>
     .pipe(gpug())
     .pipe(gulp.dest(routes.pug.dest));
 
-export const dev = gulp.series([pug]);
+    const clean = () => del(["build"]);
+
+    const prepare = gulp.series([clean]);
+    // package.json 에 있는 거만 export 해주면 됨
+    const assets = gulp.series([pug]);
+    
+    export const dev = gulp.series([prepare, assets]);

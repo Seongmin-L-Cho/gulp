@@ -14,10 +14,15 @@ export const pug = () =>
     .pipe(gpug())
     .pipe(gulp.dest(routes.pug.dest));
 
-    const clean = () => del(["build"]);
+    const clean = () => del(["build/"]);
+
+    const webserver = () =>
+      gulp.src("build").pipe(ws({ livereload: true, open: true }));
 
     const prepare = gulp.series([clean]);
     // package.json 에 있는 거만 export 해주면 됨
     const assets = gulp.series([pug]);
     
-    export const dev = gulp.series([prepare, assets]);
+    const postDev = gulp.series([webserver]);
+
+    export const dev = gulp.series([prepare, assets, postDev]);

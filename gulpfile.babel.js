@@ -6,16 +6,17 @@ import image from "gulp-image";
 import sass from "gulp-sass";
 import autoprefixer from "gulp-autoprefixer";
 import miniCSS from "gulp-csso";
+import bro from "gulp-bro";
+import babelify from "babelify";
 
 sass.compiler = require("node-sass");
 
 const routes = {
   pug: {
-    watch: "src/**/*.pug",// 컴파일 할거 전체 관찰
+    watch: "src/**/*.pug",
     src: "src/*.pug",
     dest: "build"
   },
-
   img: {
     src: "src/img/*",
     dest: "build/img"
@@ -24,29 +25,31 @@ const routes = {
     watch: "src/scss/**/*.scss",
     src: "src/scss/style.scss",
     dest: "build/css"
+  },
+  js: {
+    watch: "src/js/**/*.js",
+    src: "src/js/main.js",
+    dest: "build/js"
   }
 };
 
-export const pug = () =>
+const pug = () =>
   gulp
     .src(routes.pug.src)
     .pipe(gpug())
     .pipe(gulp.dest(routes.pug.dest));
 
-    const clean = () => del(["build/"]);
+const clean = () => del(["build/"]);
 
-    const webserver = () => gulp.src("build").pipe(ws({ livereload: true }));
+const webserver = () => gulp.src("build").pipe(ws({ livereload: true }));
 
-      const prepare = gulp.series([clean, img]);    // package.json 에 있는 거만 export 해주면 됨
-    
-    const img = () =>
-    gulp
-      .src(routes.img.src)
-      .pipe(image())
-      .pipe(gulp.dest(routes.img.dest));
+const img = () =>
+  gulp
+    .src(routes.img.src)
+    .pipe(image())
+    .pipe(gulp.dest(routes.img.dest));
 
-
-      const styles = () =>
+const styles = () =>
   gulp
     .src(routes.scss.src)
     .pipe(sass().on("error", sass.logError))
@@ -55,20 +58,33 @@ export const pug = () =>
         browsers: ["last 2 versions"]
       })
     )
-    .pipe(miniCSS()).pipe(gulp.dest(routes.scss.dest));
+    .pipe(miniCSS())
+    .pipe(gulp.dest(routes.scss.dest));
 
+const js = () =>
+  gulp
+    .src(routes.js.src)
+    .pipe(
+      bro({
+        transform: [
+          babelify.configure({ presets: ["@babel/preset-env"] }),
+          ["uglifyify", { global: true }]
+        ]
+      })
+    )
+    .pipe(gulp.dest(routes.js.dest));
 
+const watch = () => {
+  gulp.watch(routes.pug.watch, pug);
+  gulp.watch(routes.img.src, img);
+  gulp.watch(routes.scss.watch, styles);
+  gulp.watch(routes.js.watch, js);
+};
 
-    const watch = () => {
-      gulp.watch(routes.pug.watch, pug);
-      gulp.watch(routes.img.src, img);
-      gulp.watch(routes.scss.watch, styles);
+const prepare = gulp.series([clean, img]);
 
-    };
-    
-    const assets = gulp.series([pug, styles]);
+const assets = gulp.series([pug, styles, js]);
 
-    
+const live = gulp.parallel([webserver, watch]);
 
-    const live = gulp.parallel([webserver, watch]);
-    export const dev = gulp.series([prepare, assets, live]);
+export const dev = gulp.series([prepare, assets, live]);
